@@ -1,10 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Web.Http;
+using System.Web.Http.Description;
 using WebActivatorEx;
 using WebApiDocsSample;
 using Swashbuckle.Application;
+using Swashbuckle.Swagger;
 
 [assembly: PreApplicationStartMethod(typeof(SwaggerConfig), "Register")]
 
@@ -12,6 +15,8 @@ namespace WebApiDocsSample
 {
     public class SwaggerConfig
     {
+        public const string UserTokenSecurityDefinitionName = "userToken";
+
         public static void Register()
         {
             var thisAssembly = typeof(SwaggerConfig).Assembly;
@@ -67,11 +72,11 @@ namespace WebApiDocsSample
                         //c.BasicAuth("basic")
                         //    .Description("Basic HTTP Authentication");
                         //
-                        //c.ApiKey("apiKey")
-                        //    .Description("API Key Authentication")
-                        //    .Name("apiKey")
-                        //    .In("header");
-                        //
+                        c.ApiKey(UserTokenSecurityDefinitionName)
+                            .Description("API Key Authentication (user token)")
+                            .Name("X-User-Token")
+                            .In("header");
+
                         //c.OAuth2("oauth2")
                         //    .Description("OAuth2 Implicit Grant")
                         //    .Flow("implicit")
@@ -109,6 +114,7 @@ namespace WebApiDocsSample
                         var commentsFileName = Assembly.GetExecutingAssembly().GetName().Name + ".XML";
                         var commentsFile = Path.Combine(baseDirectory, "bin", commentsFileName);
                         c.IncludeXmlComments(commentsFile);
+
 
                         // Swashbuckle makes a best attempt at generating Swagger compliant JSON schemas for the various types
                         // exposed in your API. However, there may be occasions when more control of the output is needed.
@@ -166,7 +172,7 @@ namespace WebApiDocsSample
                         // before using this option.
                         //
                         //c.DocumentFilter<ApplyDocumentVendorExtensions>();
-
+                        c.DocumentFilter<RequireApiKey>();
                         // In contrast to WebApi, Swagger 2.0 does not include the query string component when mapping a URL
                         // to an action. As a result, Swashbuckle will raise an exception if it encounters multiple actions
                         // with the same path (sans query string) and HTTP method. You can workaround this by providing a
@@ -233,4 +239,15 @@ namespace WebApiDocsSample
                     });
         }
     }
+
+    public class RequireApiKey : IDocumentFilter
+    {
+        public void Apply(SwaggerDocument swaggerDoc, SchemaRegistry schemaRegistry, IApiExplorer apiExplorer)
+        {
+            var usertTokenSecurity = new Dictionary<string, IEnumerable<string>>();
+            usertTokenSecurity[SwaggerConfig.UserTokenSecurityDefinitionName] = new List<string>();
+            swaggerDoc.security = new List<IDictionary<string, IEnumerable<string>>>() {usertTokenSecurity};
+        }
+    }
+
 }
