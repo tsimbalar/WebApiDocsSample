@@ -16,6 +16,12 @@ namespace WebApiDocsSample.Controllers
         }
 
         // GET api/values/5
+        /// <summary>
+        /// Gets a value from its id
+        /// </summary>
+        /// <param name="id">id of the value to get</param>
+        /// <returns></returns>
+        /// <response code="419">when the value is a teapot</response>
         public string Get(int id)
         {
             return "value";
